@@ -55,9 +55,8 @@ const ModernHeader = () => {
         },
       ],
     },
-    { name: "Instructors", href: "/instructors" },
-    { name: "About", href: "/about" },
-    { name: "Pricing", href: "/pricing" },
+    { name: "About Us", href: "/about" },
+    { name: "Contact Us", href: "/contact" },
   ];
 
   return (
@@ -81,8 +80,8 @@ const ModernHeader = () => {
                   <Star className="w-2 h-2 text-white" />
                 </div>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                LearnHub
+              <span className="text-xl font-bold bg-gradient-to-r text-white ">
+                EduHikerz
               </span>
             </Link>
           </div>
@@ -91,23 +90,33 @@ const ModernHeader = () => {
           <nav className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
               <div key={item.name} className="relative group">
-                <button
-                  className="flex items-center space-x-1 text-gray-300 hover:text-white transition-colors duration-200 py-2"
-                  onMouseEnter={() =>
-                    item.hasDropdown && setActiveDropdown(item.name)
-                  }
-                  onMouseLeave={() => setActiveDropdown(null)}
-                >
-                  <span className="font-medium">{item.name}</span>
-                  {item.hasDropdown && (
+                {/* Updated: Use Link for items without dropdown, button for items with dropdown */}
+                {item.hasDropdown ? (
+                  <div
+                    className="flex items-center space-x-1 text-gray-300 hover:text-white transition-colors duration-200 py-2 cursor-pointer"
+                    onMouseEnter={() => setActiveDropdown(item.name)}
+                    onMouseLeave={() => setActiveDropdown(null)}
+                  >
+                    <Link to={item.href} className="font-medium">
+                      {item.name}
+                    </Link>
                     <ChevronDown className="w-4 h-4 transition-transform duration-200 group-hover:rotate-180" />
-                  )}
-                </button>
+                  </div>
+                ) : (
+                  <Link
+                    to={item.href}
+                    className="flex items-center space-x-1 text-gray-300 hover:text-white transition-colors duration-200 py-2 font-medium"
+                  >
+                    {item.name}
+                  </Link>
+                )}
+
+                {/* Dropdown Menu */}
                 {item.hasDropdown && activeDropdown === item.name && (
                   <div
                     className="absolute top-full left-0 mt-2 w-56 bg-slate-800/90 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl py-2"
                     onMouseEnter={() => setActiveDropdown(item.name)}
-                    // onMouseLeave={() => setActiveDropdown(null)}
+                    onMouseLeave={() => setActiveDropdown(null)}
                   >
                     {item.dropdownItems.map((dropdownItem) => (
                       <Link
@@ -142,7 +151,7 @@ const ModernHeader = () => {
                       Manage Categories
                     </Link>
                     <Link
-                      to="/dashboard"
+                      to="/admin/dashboard"
                       className="text-gray-300 hover:text-white font-medium"
                     >
                       Admin Dashboard
@@ -216,6 +225,7 @@ const ModernHeader = () => {
                   <Link
                     to={item.href}
                     className="block text-gray-300 hover:text-white font-medium py-2"
+                    onClick={() => setIsMobileMenuOpen(false)} // Close mobile menu on click
                   >
                     {item.name}
                   </Link>
@@ -226,6 +236,7 @@ const ModernHeader = () => {
                           key={dropdownItem.name}
                           to={dropdownItem.href}
                           className="flex items-center space-x-3 text-sm text-gray-400 hover:text-gray-300 py-1"
+                          onClick={() => setIsMobileMenuOpen(false)} // Close mobile menu on click
                         >
                           <div className="text-cyan-400">
                             {dropdownItem.icon}
@@ -238,6 +249,48 @@ const ModernHeader = () => {
                 </div>
               ))}
 
+              {/* Mobile authenticated links */}
+              {isAuthenticated && (
+                <div className="pt-4 border-t border-white/10 space-y-3">
+                  <Link
+                    to="/dashboard"
+                    className="block text-gray-300 hover:text-white font-medium py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+
+                  {user?.role === "admin" && (
+                    <>
+                      <Link
+                        to="/admin/categories"
+                        className="block text-gray-300 hover:text-white font-medium py-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Manage Categories
+                      </Link>
+                      <Link
+                        to="/admin/dashboard"
+                        className="block text-gray-300 hover:text-white font-medium py-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Admin Dashboard
+                      </Link>
+                    </>
+                  )}
+
+                  {user?.role === "instructor" && (
+                    <Link
+                      to="/create-course"
+                      className="block text-gray-300 hover:text-white font-medium py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Create Course
+                    </Link>
+                  )}
+                </div>
+              )}
+
               <div className="pt-4 space-y-3 border-t border-white/10">
                 {isAuthenticated ? (
                   <>
@@ -245,7 +298,10 @@ const ModernHeader = () => {
                       Welcome, {user?.name}
                     </span>
                     <button
-                      onClick={handleLogout}
+                      onClick={() => {
+                        handleLogout();
+                        setIsMobileMenuOpen(false);
+                      }}
                       className="w-full text-left text-gray-300 hover:text-white font-medium py-2"
                     >
                       Logout
@@ -256,12 +312,14 @@ const ModernHeader = () => {
                     <Link
                       to="/login"
                       className="block text-gray-300 hover:text-white font-medium"
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Login
                     </Link>
                     <Link
                       to="/register"
                       className="block px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full text-center font-medium"
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Get Started
                     </Link>

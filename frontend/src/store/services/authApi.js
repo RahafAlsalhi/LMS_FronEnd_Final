@@ -13,6 +13,13 @@ const authApi = {
     return await httpClient.get("/auth/me");
   },
 
+  // Add this new method for token refresh
+  refreshToken: async (refreshToken) => {
+    return await httpClient.post("/auth/refresh", {
+      refreshToken,
+    });
+  },
+
   logout: async () => {
     return await httpClient.post("/auth/logout");
   },

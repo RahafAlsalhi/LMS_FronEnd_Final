@@ -8,6 +8,9 @@ import httpClient from "../../services/httpClient";
 
 const InstructorDashboard = () => {
   const navigate = useNavigate();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [deletingCourseId, setDeletingCourseId] = useState(null); // Track which course is being deleted
+
   const { user } = useSelector((state) => state.auth);
   const [courses, setCourses] = useState([]);
   const [stats, setStats] = useState({
@@ -26,14 +29,18 @@ const InstructorDashboard = () => {
 
   const fetchInstructorData = async () => {
     try {
+      setIsRefreshing(true);
       setLoading(true);
       setError(null);
 
       console.log("Fetching instructor courses for user:", user?.id);
 
+      // Add a small delay to show the loading effect (optional)
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       // Fetch instructor's own courses using the new endpoint
       const coursesResponse = await httpClient.get(
-        "/courses/instructor/my-courses"
+        "http://localhost:5000/api/courses/instructor/my-courses"
       );
       const instructorCourses = coursesResponse || [];
 
@@ -50,11 +57,14 @@ const InstructorDashboard = () => {
         totalStudents: totalStudents,
         pendingGrading: 0, // This would need assignment data
       });
+
+      console.log("✅ Courses refreshed successfully!");
     } catch (error) {
       console.error("Error fetching instructor data:", error);
       setError("Failed to load dashboard data: " + error.message);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -68,6 +78,59 @@ const InstructorDashboard = () => {
     navigate("/create-course");
   };
 
+  const handleDeleteCourse = async (courseId, courseTitle) => {
+    // Confirmation dialog
+    const confirmMessage = `Are you sure you want to delete the course "${courseTitle}"?\n\nThis action cannot be undone and will permanently remove:\n• The course and all its content\n• All student enrollments\n• All progress data\n\nType "DELETE" to confirm:`;
+
+    const userInput = prompt(confirmMessage);
+
+    if (userInput !== "DELETE") {
+      if (userInput !== null) {
+        alert(
+          "Course deletion cancelled. You must type 'DELETE' exactly to confirm."
+        );
+      }
+      return;
+    }
+
+    try {
+      setDeletingCourseId(courseId);
+      console.log("🗑️ Attempting to delete course:", courseId);
+
+      // FIXED: Use the correct full URL path
+      const response = await httpClient.delete(
+        `http://localhost:5000/api/courses/${courseId}`
+      );
+
+      console.log("✅ Course deletion response:", response);
+
+      // Show success message
+      alert(`✅ Course "${courseTitle}" has been deleted successfully.`);
+
+      // IMPORTANT: Refresh the courses list to reflect the deletion
+      console.log("🔄 Refreshing courses list...");
+      await fetchInstructorData();
+
+      console.log("✅ Dashboard refreshed after deletion");
+    } catch (error) {
+      console.error("❌ Error deleting course:", error);
+      console.error("Error details:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+      });
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to delete course";
+      alert(`❌ Error: ${errorMessage}`);
+    } finally {
+      setDeletingCourseId(null);
+    }
+  };
+
   const getStatusColor = (course) => {
     if (!course.is_approved && !course.is_published) return "warning"; // Pending approval
     if (course.is_approved && !course.is_published) return "info"; // Ready to publish
@@ -77,7 +140,7 @@ const InstructorDashboard = () => {
 
   const getStatusText = (course) => {
     if (!course.is_approved && !course.is_published) return "Pending Approval";
-    if (course.is_approved && !course.is_published) return "Ready to Publish";
+    if (course.is_approved && !course.is_published) return " Published";
     if (!course.is_approved && course.is_published)
       return "Published (Pending Approval)";
     return "Published";
@@ -368,10 +431,22 @@ const InstructorDashboard = () => {
           </button>
           <button
             onClick={fetchInstructorData}
-            className="bg-white hover:bg-slate-50 text-slate-700 font-medium py-3 px-6 rounded-xl border border-slate-200 transition-colors flex items-center gap-2"
+            disabled={isRefreshing}
+            className={`
+    ${
+      isRefreshing
+        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+        : "bg-white hover:bg-slate-50 text-slate-700 hover:scale-105"
+    } 
+    font-medium py-3 px-6 rounded-xl border border-slate-200 
+    transition-all duration-200 ease-in-out
+    flex items-center gap-2 
+    active:scale-95 
+    shadow-sm hover:shadow-md
+  `}
           >
             <svg
-              className="w-5 h-5"
+              className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -383,7 +458,7 @@ const InstructorDashboard = () => {
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            Refresh Courses
+            {isRefreshing ? "Refreshing..." : "Refresh Courses"}
           </button>
         </div>
 
@@ -456,12 +531,65 @@ const InstructorDashboard = () => {
                           {new Date(course.created_at).toLocaleDateString()}
                         </td>
                         <td className="py-4 px-6 text-center">
-                          <button
-                            onClick={() => navigate(`/courses/${course.id}`)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                          >
-                            View
-                          </button>
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => navigate(`/courses/${course.id}`)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleDeleteCourse(course.id, course.title)
+                              }
+                              disabled={deletingCourseId === course.id}
+                              className={`
+                                ${
+                                  deletingCourseId === course.id
+                                    ? "bg-gray-400 cursor-not-allowed"
+                                    : "bg-red-600 hover:bg-red-700"
+                                } 
+                                text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                                flex items-center gap-1
+                              `}
+                            >
+                              {deletingCourseId === course.id ? (
+                                <>
+                                  <svg
+                                    className="w-4 h-4 animate-spin"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                    />
+                                  </svg>
+                                  Deleting...
+                                </>
+                              ) : (
+                                <>
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
+                                  Delete
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -496,12 +624,65 @@ const InstructorDashboard = () => {
                         {new Date(course.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <button
-                      onClick={() => navigate(`/courses/${course.id}`)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-                    >
-                      View Course
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => navigate(`/courses/${course.id}`)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                      >
+                        View Course
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleDeleteCourse(course.id, course.title)
+                        }
+                        disabled={deletingCourseId === course.id}
+                        className={`
+                          ${
+                            deletingCourseId === course.id
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-red-600 hover:bg-red-700"
+                          } 
+                          text-white py-2 px-4 rounded-lg font-medium transition-colors
+                          flex items-center justify-center gap-1 min-w-[100px]
+                        `}
+                      >
+                        {deletingCourseId === course.id ? (
+                          <>
+                            <svg
+                              className="w-4 h-4 animate-spin"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                              />
+                            </svg>
+                            <span className="text-xs">Deleting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                            <span className="text-xs">Delete</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

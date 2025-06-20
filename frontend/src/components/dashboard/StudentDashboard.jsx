@@ -80,11 +80,17 @@ const StudentDashboard = () => {
 
   const handleEnrollInCourse = async (courseId) => {
     try {
+      if (!user?.id) {
+        alert("❌ User not authenticated");
+        return;
+      }
+
       console.log("Enrolling in course:", courseId);
 
-      // Use your existing enrollments endpoint
+      // Only send course_id - the backend gets user_id from the JWT token
       await httpClient.post("/enrollments", {
         course_id: courseId,
+        // Remove user_id from here - backend gets it from req.user.userId
       });
 
       alert("✅ Successfully enrolled in course!");
@@ -93,7 +99,13 @@ const StudentDashboard = () => {
       await fetchStudentData();
     } catch (error) {
       console.error("Error enrolling in course:", error);
-      alert("❌ Error enrolling in course: " + error.message);
+
+      // Better error handling
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Unknown error occurred";
+      alert("❌ Error enrolling in course: " + errorMessage);
     }
   };
 
@@ -318,41 +330,6 @@ const StudentDashboard = () => {
                         {new Date(enrollment.enrolled_at).toLocaleDateString()}
                       </p>
                     </div>
-                    {(enrollment.completed_at ||
-                      (enrollment.progress && enrollment.progress >= 100)) && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <svg
-                          className="w-3 h-3 mr-1"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        Completed
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-slate-700">
-                        Progress
-                      </span>
-                      <span className="text-sm text-slate-600">
-                        {enrollment.progress || 0}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${enrollment.progress || 0}%` }}
-                      ></div>
-                    </div>
                   </div>
 
                   {/* Action Button */}
@@ -438,7 +415,7 @@ const StudentDashboard = () => {
                   {/* Action Buttons */}
                   <div className="flex gap-3">
                     <button
-                      onClick={() => handleEnrollInCourse(course.id)}
+                      onClick={() => handleEnrollInCourse(course.id, user.id)}
                       className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-2.5 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
                     >
                       Enroll Now
@@ -505,7 +482,7 @@ const StudentDashboard = () => {
               </svg>
             </div>
             <h3 className="text-2xl font-bold text-slate-800 mb-3">
-              Welcome to EduLearn!
+              Welcome to EduHikerz!
             </h3>
             <p className="text-slate-600 mb-6 max-w-md mx-auto">
               No courses are available yet. Contact your administrator or check

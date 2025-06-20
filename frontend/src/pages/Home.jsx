@@ -8,12 +8,42 @@ import {
   Play,
   ArrowRight,
 } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 
 const ModernLandingPage = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [isVisible, setIsVisible] = useState(false);
+
+  // Check if user is logged in - REPLACE THIS with your actual auth check
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
+
+    // REPLACE THIS SECTION with your actual authentication check
+    // Example options:
+    // 1. Check localStorage: const token = localStorage.getItem('authToken');
+    // 2. Check context: const { isAuthenticated } = useAuth();
+    // 3. Check Redux: const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+
+    const checkAuthStatus = () => {
+      // Option 1: localStorage check
+      const token = localStorage.getItem("authToken");
+      setIsLoggedIn(!!token);
+
+      // Option 2: If you use a different key
+      // const user = localStorage.getItem('user');
+      // setIsLoggedIn(!!user);
+
+      // Option 3: If you use sessionStorage
+      // const token = sessionStorage.getItem('authToken');
+      // setIsLoggedIn(!!token);
+    };
+
+    checkAuthStatus();
   }, []);
 
   const features = [
@@ -93,12 +123,6 @@ const ModernLandingPage = () => {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
           }`}
         >
-          <div className="mb-6">
-            <span className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-sm font-medium mb-6">
-              ✨ Welcome to the Future of Learning
-            </span>
-          </div>
-
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent leading-tight">
             Master Skills That
             <br />
@@ -113,19 +137,19 @@ const ModernLandingPage = () => {
             matter.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-            <button className="group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-cyan-500/25 transition-all duration-300 hover:scale-105">
-              <span className="flex items-center">
-                Start Learning Now
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </span>
-            </button>
-
-            <button className="group flex items-center px-8 py-4 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 font-semibold text-lg">
-              <Play className="mr-2 w-5 h-5" />
-              Watch Demo
-            </button>
-          </div>
+          {/* UPDATED: Conditional rendering - button only shows when NOT logged in */}
+          {!isLoggedIn && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+              <Link to="/register">
+                <button className="group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-cyan-500/25 transition-all duration-300 hover:scale-105">
+                  <span className="flex items-center text-white">
+                    Start Learning Now
+                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                  </span>
+                </button>
+              </Link>
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
@@ -246,7 +270,7 @@ const ModernLandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA Section - UPDATED: Also conditional */}
       <section className="relative py-24 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="relative p-12 rounded-3xl bg-gradient-to-r from-cyan-500/10 to-purple-500/10 backdrop-blur-sm border border-white/10">
@@ -260,16 +284,34 @@ const ModernLandingPage = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="group px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-cyan-500/25 transition-all duration-300 hover:scale-105">
-                <span className="flex items-center justify-center">
-                  Get Started Free
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                </span>
-              </button>
-
-              <button className="px-8 py-4 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 font-semibold text-lg">
-                Browse Courses
-              </button>
+              {/* UPDATED: Conditional rendering for CTA buttons too */}
+              {!isLoggedIn ? (
+                <>
+                  <Link to="/register">
+                    <button className="group px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-cyan-500/25 transition-all duration-300 hover:scale-105">
+                      <span className="flex items-center justify-center">
+                        Get Started Free
+                        <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                      </span>
+                    </button>
+                  </Link>
+                  <Link to="/courses">
+                    <button className="px-8 py-4 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 font-semibold text-lg">
+                      Browse Courses
+                    </button>
+                  </Link>
+                </>
+              ) : (
+                // Show different content for logged in users
+                <Link to="/dashboard">
+                  <button className="group px-8 py-4 bg-gradient-to-r from-green-500 to-blue-600 rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-300 hover:scale-105">
+                    <span className="flex items-center justify-center">
+                      Go to Dashboard
+                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                    </span>
+                  </button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

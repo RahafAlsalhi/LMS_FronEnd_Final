@@ -2,7 +2,7 @@ import httpClient from "../../services/httpClient";
 
 const courseApi = {
   getAllCourses: async () => {
-    return await httpClient.get("/courses");
+    return await httpClient.get("/courses/published");
   },
 
   getCourseById: async (id) => {

@@ -260,10 +260,16 @@ const LessonList = ({ moduleId, isInstructor }) => {
 
   const handleCreateLesson = async () => {
     try {
-      await httpClient.post("/lessons", {
+      const payload = {
         module_id: moduleId,
         ...newLesson,
-      });
+      };
+
+      // Add this logging to see what's being sent
+      console.log("Sending lesson payload:", payload);
+
+      await httpClient.post("api/lessons", payload);
+      console.log("Lesson created successfully", moduleId);
       setCreateDialogOpen(false);
       setNewLesson({
         title: "",
@@ -275,6 +281,7 @@ const LessonList = ({ moduleId, isInstructor }) => {
       fetchLessons();
     } catch (error) {
       console.error("Error creating lesson:", error);
+      console.error("Error response:", error.response?.data); // Add this line
     }
   };
 

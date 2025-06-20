@@ -18,6 +18,15 @@ import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import CoursePlayer from "./components/course/CoursePlayer";
+import CategoryManagement from "./pages/admin/CategoryManagement";
+import CreateCourse from "./pages/instructor/CreateCourse";
+import CourseManagement from "./pages/instructor/CourseManagement";
+import ForgotPassword from "./pages/ForgotPassword";
+import AboutUs from "./pages/AboutUs";
+import Contact from "./pages/Contact";
+import UserManagement from "./pages/admin/UserManagement";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 const theme = createTheme({
   palette: {
     mode: "light",
@@ -74,9 +83,6 @@ const AuthWrapper = ({ children }) => {
   return children;
 };
 
-import CategoryManagement from "./pages/admin/CategoryManagement";
-import CreateCourse from "./pages/instructor/CreateCourse";
-
 function App() {
   return (
     <Provider store={store}>
@@ -116,7 +122,8 @@ function App() {
                         <CategoryManagement />
                       </ProtectedRoute>
                     }
-                  />
+                  />{" "}
+                  <Route path="/admin/users" element={<UserManagement />} />
                   <Route
                     path="/dashboard"
                     element={
@@ -125,6 +132,18 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  {/* Your existing routes */}
+                  <Route path="/create-course" element={<CreateCourse />} />
+                  {/* New route for course management */}
+                  <Route
+                    path="/course/:courseId/manage"
+                    element={<CourseManagement />}
+                  />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/about" element={<AboutUs />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<Terms />} />
                 </Routes>
               </main>
             </div>

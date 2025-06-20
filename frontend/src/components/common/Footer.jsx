@@ -115,7 +115,7 @@ const ModernFooter = () => {
                   </div>
                 </div>
                 <span className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                  LearnHub
+                  EduHikerz
                 </span>
               </div>
 
@@ -129,7 +129,7 @@ const ModernFooter = () => {
               <div className="space-y-3 mb-6">
                 <div className="flex items-center space-x-3 text-gray-400">
                   <Mail className="w-4 h-4 text-cyan-400" />
-                  <span>hello@learnhub.com</span>
+                  <span>hello@EduHikerz.com</span>
                 </div>
                 <div className="flex items-center space-x-3 text-gray-400">
                   <Phone className="w-4 h-4 text-cyan-400" />
@@ -184,7 +184,7 @@ const ModernFooter = () => {
           <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
             {/* Copyright */}
             <div className="flex items-center space-x-2 text-gray-400">
-              <span>© 2025 LearnHub. Made with</span>
+              <span>© 2025 EduHikerz. Made with</span>
               <Heart className="w-4 h-4 text-red-500 fill-current" />
               <span>for learners worldwide</span>
             </div>

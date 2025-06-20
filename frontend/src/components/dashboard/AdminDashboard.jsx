@@ -61,14 +61,28 @@ const AdminDashboard = () => {
       );
     }
   };
+  const fetchEnrollmentStats = async () => {
+    try {
+      const response = await httpClient.get("/enrollments/admin/stats");
+
+      if (response.data) {
+        return response.data.active_enrollments;
+      }
+    } catch (error) {
+      console.error("Error fetching enrollment stats:", error);
+    }
+    return 0;
+  };
 
   // Course approval handler
   const handleCourseApproval = async (courseId, approved) => {
     console.log("handleCourseApproval called:", courseId, approved);
 
     const course = pendingCourses.find((c) => c.id === courseId);
-    const action = approved ? "approve" : "reject";
-    const confirmMessage = `Are you sure you want to ${action} the course "${course?.title}"?`;
+    const action = approved ? "approve" : "reject and delete";
+    const confirmMessage = approved
+      ? `Are you sure you want to approve the course "${course?.title}"?`
+      : `Are you sure you want to reject and permanently delete the course "${course?.title}"?\n\nThis action cannot be undone and will remove the course from the database.`;
 
     if (!window.confirm(confirmMessage)) {
       return;
@@ -81,9 +95,13 @@ const AdminDashboard = () => {
 
       console.log("Course approval response:", response);
 
-      const message = approved
-        ? `✅ Course "${course?.title}" has been approved and is now visible to students!`
-        : `❌ Course "${course?.title}" has been rejected.`;
+      // Handle different response types
+      const message =
+        response.data?.action === "deleted"
+          ? `❌ Course "${course?.title}" has been rejected and permanently deleted.`
+          : approved
+          ? `✅ Course "${course?.title}" has been approved and is now visible to students!`
+          : `❌ Course "${course?.title}" has been rejected.`;
 
       alert(message);
 
@@ -92,7 +110,10 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error updating course approval:", error);
       alert(
-        "❌ Error: " + (error.message || "Failed to update course approval")
+        "❌ Error: " +
+          (error.response?.data?.message ||
+            error.message ||
+            "Failed to update course approval")
       );
     }
   };
@@ -100,6 +121,8 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchAdminData();
   }, []);
+
+  // Replace your fetchAdminData function with this updated version:
 
   const fetchAdminData = async () => {
     console.log("Fetching admin data...");
@@ -120,6 +143,17 @@ const AdminDashboard = () => {
       const courses = coursesResponse || [];
       console.log("All courses (including pending):", courses);
 
+      // DEBUG: Log course approval statuses
+      console.log("Course approval statuses:");
+      courses.forEach((course) => {
+        console.log(
+          `Course "${course.title}": is_approved =`,
+          course.is_approved,
+          `approval_status =`,
+          course.approval_status
+        );
+      });
+
       // Fetch pending instructors
       const pendingInstructorsResponse = await httpClient.get(
         "/users/pending-instructors"
@@ -127,23 +161,35 @@ const AdminDashboard = () => {
       const pendingInstructorsList = pendingInstructorsResponse || [];
       console.log("Pending instructors:", pendingInstructorsList);
 
+      const activeEnrollments = await fetchEnrollmentStats();
+
+      // IMPROVED FILTERING: Only show courses that are truly pending (null or undefined)
+      const pendingCoursesList = courses.filter((c) => {
+        // Use approval_status if available, otherwise fall back to is_approved check
+        if (c.approval_status) {
+          return c.approval_status === "pending";
+        }
+        // Fallback: only show if is_approved is null or undefined
+        return c.is_approved === null || c.is_approved === undefined;
+      });
+
+      console.log("Filtered pending courses:", pendingCoursesList);
+
+      // For instructors, assume the pending-instructors endpoint returns only truly pending ones
+      const actualPendingInstructors = pendingInstructorsList;
+
       // Calculate stats
       setStats({
         totalUsers: users.length,
         totalCourses: courses.length,
         pendingApprovals:
-          courses.filter((c) => !c.is_approved).length +
-          pendingInstructorsList.length,
-        activeEnrollments: 0, // You might want to calculate this properly later
+          pendingCoursesList.length + actualPendingInstructors.length,
+        activeEnrollments: activeEnrollments,
       });
 
-      // Set pending courses (not approved)
-      const pendingCoursesList = courses.filter((c) => !c.is_approved);
-      console.log("Pending courses:", pendingCoursesList);
+      // Set the filtered data
       setPendingCourses(pendingCoursesList);
-
-      // Set pending instructors
-      setPendingInstructors(pendingInstructorsList);
+      setPendingInstructors(actualPendingInstructors);
 
       // Set recent users (last 5)
       setRecentUsers(users.slice(-5).reverse());
@@ -319,7 +365,7 @@ const AdminDashboard = () => {
                 </svg>
               </div>
               <span className="text-2xl font-bold text-slate-800">
-                {stats.activeEnrollments}
+                {stats.activeEnrollments}{" "}
               </span>
             </div>
             <h3 className="font-semibold text-slate-700 mb-1">
@@ -658,6 +704,27 @@ const AdminDashboard = () => {
               </svg>
               Manage Categories
             </button>
+
+            <button
+              onClick={() => (window.location.href = "/admin/users")}
+              className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] flex items-center gap-2"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
+                />
+              </svg>
+              Manage Users
+            </button>
+
             <button
               onClick={fetchAdminData}
               className="bg-white hover:bg-slate-50 text-slate-700 font-medium py-3 px-6 rounded-xl border border-slate-200 transition-colors flex items-center gap-2"
