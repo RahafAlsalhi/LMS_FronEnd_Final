@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { X, Upload, FileText, Download, Check, Clock } from "lucide-react";
+import {
+  X,
+  Upload,
+  FileText,
+  Download,
+  Check,
+  Clock,
+  Star,
+  AlertCircle,
+} from "lucide-react";
 
 const AssignmentSubmissionModal = ({ assignment, onClose, httpClient }) => {
   const [submission, setSubmission] = useState(null);
@@ -17,6 +26,7 @@ const AssignmentSubmissionModal = ({ assignment, onClose, httpClient }) => {
   const fetchExistingSubmission = async () => {
     try {
       setLoading(true);
+      // Try the new route structure first
       const response = await httpClient.get(
         `/submissions/assignment/${assignment.id}/my`
       );
@@ -25,7 +35,6 @@ const AssignmentSubmissionModal = ({ assignment, onClose, httpClient }) => {
         setSubmissionText(response.submission_text || "");
       }
     } catch (error) {
-      // No existing submission found - this is normal
       console.log("No existing submission found");
     } finally {
       setLoading(false);
@@ -127,7 +136,7 @@ const AssignmentSubmissionModal = ({ assignment, onClose, httpClient }) => {
   const handleDownload = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/submissions/assignment/${assignment.id}/download`,
+        `http://localhost:5000/api/submissions/${assignment.id}/download`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -165,7 +174,21 @@ const AssignmentSubmissionModal = ({ assignment, onClose, httpClient }) => {
 
   const isOverdue =
     assignment.deadline && new Date() > new Date(assignment.deadline);
-  const canSubmit = !isOverdue; // Allow resubmission since your backend handles upsert
+  const hasSubmission = submission !== null;
+  const isGraded = hasSubmission && submission.grade !== null;
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl p-8">
+          <div className="flex items-center space-x-3">
+            <div className="w-6 h-6 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+            <span>Loading assignment...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -180,7 +203,13 @@ const AssignmentSubmissionModal = ({ assignment, onClose, httpClient }) => {
               <h2 className="text-xl font-bold text-gray-900">
                 {assignment.title}
               </h2>
-              <p className="text-sm text-gray-600">Assignment Submission</p>
+              <p className="text-sm text-gray-600">
+                {isGraded
+                  ? "Graded Assignment"
+                  : hasSubmission
+                  ? "Submitted Assignment"
+                  : "Assignment Submission"}
+              </p>
             </div>
           </div>
           <button
@@ -223,204 +252,335 @@ const AssignmentSubmissionModal = ({ assignment, onClose, httpClient }) => {
             </div>
           </div>
 
-          {/* Existing Submission Display */}
-          {submission && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          {/* Graded Submission View */}
+          {isGraded && (
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6 mb-6">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                  <Star className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-green-800">
+                    Assignment Graded
+                  </h3>
+                  <p className="text-green-600">
+                    Submitted on {formatDate(submission.submitted_at)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Grade Display */}
+              <div className="bg-white rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-lg font-semibold text-gray-700">
+                    Your Grade:
+                  </span>
+                  <div className="text-3xl font-bold text-green-600">
+                    {submission.grade}/{assignment.max_points}
+                  </div>
+                </div>
+
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
+                  <div
+                    className="bg-green-500 h-3 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${
+                        (submission.grade / assignment.max_points) * 100
+                      }%`,
+                    }}
+                  />
+                </div>
+
+                <div className="text-center mb-3">
+                  <span className="text-lg font-medium text-gray-600">
+                    {Math.round(
+                      (submission.grade / assignment.max_points) * 100
+                    )}
+                    %
+                  </span>
+                </div>
+
+                {submission.feedback && (
+                  <div className="border-t pt-3">
+                    <h4 className="font-semibold text-gray-700 mb-2">
+                      Instructor Feedback:
+                    </h4>
+                    <p className="text-gray-600 bg-gray-50 p-3 rounded">
+                      {submission.feedback}
+                    </p>
+                  </div>
+                )}
+
+                {submission.graded_at && (
+                  <p className="text-sm text-gray-500 mt-3">
+                    Graded on {formatDate(submission.graded_at)}
+                  </p>
+                )}
+              </div>
+
+              {/* Submitted Content */}
+              <div className="bg-white rounded-lg p-4">
+                <h4 className="font-semibold text-gray-700 mb-3">
+                  Your Submission:
+                </h4>
+
+                {submission.submission_text && (
+                  <div className="mb-3">
+                    <h5 className="font-medium text-gray-600 mb-2">
+                      Text Submission:
+                    </h5>
+                    <div className="text-gray-700 bg-gray-50 p-3 rounded border max-h-40 overflow-y-auto">
+                      {submission.submission_text}
+                    </div>
+                  </div>
+                )}
+
+                {submission.submission_url && (
+                  <div>
+                    <h5 className="font-medium text-gray-600 mb-2">
+                      File Submission:
+                    </h5>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={handleDownload}
+                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm transition-colors"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download: {submission.file_name || "Submitted File"}
+                      </button>
+                      {submission.file_type && (
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                          {submission.file_type.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Ungraded Submission View */}
+          {hasSubmission && !isGraded && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <div className="flex items-center mb-3">
-                <Check className="w-5 h-5 text-green-600 mr-2" />
-                <h3 className="font-semibold text-green-800">
-                  {submission.grade !== null
-                    ? "Graded Submission"
-                    : "Submitted"}
+                <Check className="w-5 h-5 text-blue-600 mr-2" />
+                <h3 className="font-semibold text-blue-800">
+                  Submission Received
                 </h3>
-                <span className="ml-auto text-sm text-green-600">
+                <span className="ml-auto text-sm text-blue-600">
                   {formatDate(submission.submitted_at)}
                 </span>
               </div>
+
+              <p className="text-blue-700 mb-3">
+                Your assignment has been submitted and is awaiting grading.
+              </p>
 
               {submission.submission_text && (
                 <div className="mb-3">
                   <h4 className="font-medium text-gray-700 mb-1">
                     Text Submission:
                   </h4>
-                  <p className="text-gray-600 bg-white p-3 rounded border">
+                  <div className="text-gray-600 bg-white p-3 rounded border max-h-32 overflow-y-auto">
                     {submission.submission_text}
-                  </p>
+                  </div>
                 </div>
               )}
 
               {submission.submission_url && (
-                <div className="mb-3">
+                <div>
                   <h4 className="font-medium text-gray-700 mb-1">
                     File Submission:
                   </h4>
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={handleDownload}
-                      className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                      className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm transition-colors"
                     >
                       <Download className="w-4 h-4 mr-1" />
                       Download: {submission.file_name || "Submitted File"}
                     </button>
                     {submission.file_type && (
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                      <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
                         {submission.file_type.toUpperCase()}
                       </span>
                     )}
                   </div>
                 </div>
               )}
-
-              {submission.grade !== null && (
-                <div className="bg-white p-3 rounded border">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-700">Grade:</span>
-                    <span className="text-lg font-bold text-green-600">
-                      {submission.grade}/{assignment.max_points}
-                    </span>
-                  </div>
-                  {submission.feedback && (
-                    <div>
-                      <span className="font-medium text-gray-700">
-                        Feedback:
-                      </span>
-                      <p className="text-gray-600 mt-1">
-                        {submission.feedback}
-                      </p>
-                    </div>
-                  )}
-                  {submission.graded_at && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      Graded on {formatDate(submission.graded_at)}
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           )}
 
-          {/* Submission Form - Always show if not overdue (allows resubmission) */}
-          {canSubmit && (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-blue-800 text-sm">
-                  {submission
-                    ? "You can update your submission by submitting again. This will replace your previous submission."
-                    : "Submit your assignment below using text, file upload, or both."}
+          {/* Submission Form - Only show if no submission exists and not overdue */}
+          {!hasSubmission && !isOverdue && (
+            <div className="space-y-6">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center mb-2">
+                  <AlertCircle className="w-5 h-5 text-orange-600 mr-2" />
+                  <h3 className="font-semibold text-orange-800">
+                    Submit Your Assignment
+                  </h3>
+                </div>
+                <p className="text-orange-700 text-sm">
+                  You can submit your assignment using text, file upload, or
+                  both methods below.
                 </p>
               </div>
 
-              {/* Text Submission */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Text Submission
-                </label>
-                <textarea
-                  value={submissionText}
-                  onChange={(e) => setSubmissionText(e.target.value)}
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  placeholder="Type your submission here..."
-                />
-              </div>
-
-              {/* File Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  File Upload (Optional)
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-2">
-                    Upload a document (PDF, DOC, DOCX, TXT, PPT, PPTX, XLS,
-                    XLSX)
-                  </p>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Maximum file size: 10MB
-                  </p>
-
-                  <input
-                    id="assignment-file"
-                    type="file"
-                    onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx"
-                    className="hidden"
-                  />
-
-                  <label
-                    htmlFor="assignment-file"
-                    className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 cursor-pointer"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Choose File
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Text Submission */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Text Submission
                   </label>
-
-                  {selectedFile && (
-                    <div className="mt-3 p-2 bg-orange-50 rounded border">
-                      <p className="text-sm text-orange-800">
-                        Selected: {selectedFile.name}
-                      </p>
-                    </div>
-                  )}
+                  <textarea
+                    value={submissionText}
+                    onChange={(e) => setSubmissionText(e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    placeholder="Type your submission here..."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Write your answer or response directly in this text area
+                  </p>
                 </div>
-              </div>
 
-              {/* Error/Success Messages */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-red-800 text-sm">{error}</p>
+                {/* OR Divider */}
+                <div className="flex items-center">
+                  <div className="flex-1 border-t border-gray-300"></div>
+                  <span className="px-3 text-sm text-gray-500 bg-white">
+                    OR
+                  </span>
+                  <div className="flex-1 border-t border-gray-300"></div>
                 </div>
-              )}
 
-              {success && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                  <p className="text-green-800 text-sm">{success}</p>
-                </div>
-              )}
+                {/* File Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    File Upload
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-400 transition-colors">
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 mb-2">
+                      Upload a document (PDF, DOC, DOCX, TXT, PPT, PPTX, XLS,
+                      XLSX)
+                    </p>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Maximum file size: 10MB
+                    </p>
 
-              {/* Submit Button */}
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={
-                    isSubmitting || (!submissionText.trim() && !selectedFile)
-                  }
-                  className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      {submission ? "Updating..." : "Submitting..."}
-                    </>
-                  ) : (
-                    <>
+                    <input
+                      id="assignment-file"
+                      type="file"
+                      onChange={handleFileChange}
+                      accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx"
+                      className="hidden"
+                    />
+
+                    <label
+                      htmlFor="assignment-file"
+                      className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 cursor-pointer transition-colors"
+                    >
                       <Upload className="w-4 h-4 mr-2" />
-                      {submission ? "Update Submission" : "Submit Assignment"}
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+                      Choose File
+                    </label>
+
+                    {selectedFile && (
+                      <div className="mt-3 p-3 bg-orange-50 rounded border border-orange-200">
+                        <div className="flex items-center justify-center">
+                          <FileText className="w-4 h-4 text-orange-600 mr-2" />
+                          <span className="text-sm text-orange-800 font-medium">
+                            {selectedFile.name}
+                          </span>
+                        </div>
+                        <p className="text-xs text-orange-600 mt-1">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Note about both methods */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-blue-800 text-sm">
+                    <strong>Note:</strong> You can use both text and file
+                    submission together. For example, write your main answer in
+                    the text area and attach supporting documents.
+                  </p>
+                </div>
+
+                {/* Error/Success Messages */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="flex items-center">
+                      <AlertCircle className="w-4 h-4 text-red-600 mr-2" />
+                      <p className="text-red-800 text-sm">{error}</p>
+                    </div>
+                  </div>
+                )}
+
+                {success && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex items-center">
+                      <Check className="w-4 h-4 text-green-600 mr-2" />
+                      <p className="text-green-800 text-sm">{success}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      isSubmitting || (!submissionText.trim() && !selectedFile)
+                    }
+                    className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Submit Assignment
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
 
           {/* Overdue Notice */}
-          {isOverdue && (
+          {isOverdue && !hasSubmission && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 font-medium">
-                This assignment is overdue.
+              <div className="flex items-center mb-2">
+                <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+                <h3 className="font-semibold text-red-800">
+                  Assignment Overdue
+                </h3>
+              </div>
+              <p className="text-red-700">
+                The deadline for this assignment has passed. Submissions are no
+                longer accepted.
               </p>
-              <p className="text-red-600 text-sm">
-                {submission
-                  ? "You have a submission, but the deadline has passed for updates."
-                  : "Submissions are no longer accepted."}
-              </p>
+              {assignment.deadline && (
+                <p className="text-red-600 text-sm mt-1">
+                  Deadline was: {formatDate(assignment.deadline)}
+                </p>
+              )}
             </div>
           )}
         </div>

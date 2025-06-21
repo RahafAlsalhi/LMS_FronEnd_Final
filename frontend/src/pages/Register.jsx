@@ -12,9 +12,14 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "student",
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -34,20 +39,208 @@ const Register = () => {
     };
   }, [dispatch]);
 
+  // Validation functions
+  const validateName = (name) => {
+    if (!name.trim()) {
+      return "Full name is required";
+    }
+    if (name.trim().length < 2) {
+      return "Name must be at least 2 characters long";
+    }
+    if (name.trim().length > 50) {
+      return "Name must be less than 50 characters";
+    }
+    if (!/^[a-zA-Z\s'-]+$/.test(name.trim())) {
+      return "Name can only contain letters, spaces, hyphens, and apostrophes";
+    }
+    return "";
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      return "Email is required";
+    }
+    if (!emailRegex.test(email)) {
+      return "Please enter a valid email address";
+    }
+    if (email.length > 100) {
+      return "Email must be less than 100 characters";
+    }
+    return "";
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      return "Password is required";
+    }
+    if (password.length < 8) {
+      return "Password must be at least 8 characters long";
+    }
+    if (password.length > 128) {
+      return "Password must be less than 128 characters";
+    }
+    if (!/(?=.*[a-z])/.test(password)) {
+      return "Password must contain at least one lowercase letter";
+    }
+    if (!/(?=.*[A-Z])/.test(password)) {
+      return "Password must contain at least one uppercase letter";
+    }
+    if (!/(?=.*\d)/.test(password)) {
+      return "Password must contain at least one number";
+    }
+    if (!/(?=.*[@$!%*?&])/.test(password)) {
+      return "Password must contain at least one special character (@$!%*?&)";
+    }
+    return "";
+  };
+
+  const validateConfirmPassword = (confirmPassword, password) => {
+    if (!confirmPassword) {
+      return "Please confirm your password";
+    }
+    if (confirmPassword !== password) {
+      return "Passwords do not match";
+    }
+    return "";
+  };
+
+  const validateTerms = (termsAccepted) => {
+    if (!termsAccepted) {
+      return "You must accept the Terms of Service and Privacy Policy";
+    }
+    return "";
+  };
+
+  // Validate form data
+  const validateForm = () => {
+    const errors = {};
+    errors.name = validateName(formData.name);
+    errors.email = validateEmail(formData.email);
+    errors.password = validatePassword(formData.password);
+    errors.confirmPassword = validateConfirmPassword(
+      formData.confirmPassword,
+      formData.password
+    );
+    errors.termsAccepted = validateTerms(termsAccepted);
+
+    // Remove empty error messages
+    Object.keys(errors).forEach((key) => {
+      if (!errors[key]) delete errors[key];
+    });
+
+    return errors;
+  };
+
+  // Real-time validation
+  useEffect(() => {
+    if (Object.keys(touched).length > 0) {
+      const errors = validateForm();
+      setValidationErrors(errors);
+    }
+  }, [formData, touched, termsAccepted]);
+
+  // Get password strength
+  const getPasswordStrength = (password) => {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/(?=.*[a-z])/.test(password)) score++;
+    if (/(?=.*[A-Z])/.test(password)) score++;
+    if (/(?=.*\d)/.test(password)) score++;
+    if (/(?=.*[@$!%*?&])/.test(password)) score++;
+
+    if (score === 0)
+      return { strength: "none", color: "bg-gray-200", text: "" };
+    if (score <= 2)
+      return { strength: "weak", color: "bg-red-500", text: "Weak" };
+    if (score <= 3)
+      return { strength: "fair", color: "bg-yellow-500", text: "Fair" };
+    if (score <= 4)
+      return { strength: "good", color: "bg-blue-500", text: "Good" };
+    return { strength: "strong", color: "bg-green-500", text: "Strong" };
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
+    });
+  };
+
+  const handleTermsChange = (e) => {
+    setTermsAccepted(e.target.checked);
+  };
+
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setTouched({
+      ...touched,
+      [name]: true,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Mark all fields as touched
+    setTouched({
+      name: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+      termsAccepted: true,
+    });
+
+    // Validate form
+    const errors = validateForm();
+    setValidationErrors(errors);
+
+    // If there are validation errors, don't submit
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    // Submit form (keep original registration process)
     dispatch(registerUser(formData));
   };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  const getInputClassName = (fieldName) => {
+    const baseClass =
+      "block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none transition-colors";
+    const errorClass = "border-red-300 focus:ring-red-500 focus:border-red-500";
+    const normalClass =
+      "border-slate-200 focus:ring-blue-500 focus:border-blue-500";
+
+    return `${baseClass} ${
+      validationErrors[fieldName] && touched[fieldName]
+        ? errorClass
+        : normalClass
+    }`;
+  };
+
+  const getPasswordInputClassName = (fieldName) => {
+    const baseClass =
+      "block w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none transition-colors";
+    const errorClass = "border-red-300 focus:ring-red-500 focus:border-red-500";
+    const normalClass =
+      "border-slate-200 focus:ring-blue-500 focus:border-blue-500";
+
+    return `${baseClass} ${
+      validationErrors[fieldName] && touched[fieldName]
+        ? errorClass
+        : normalClass
+    }`;
   };
 
   return (
@@ -86,7 +279,7 @@ const Register = () => {
             {error && (
               <div className="flex items-center p-4 mb-4 text-red-700 bg-red-50 border border-red-200 rounded-lg">
                 <svg
-                  className="w-4 h-4 mr-2"
+                  className="w-4 h-4 mr-2 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -100,7 +293,7 @@ const Register = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
               {/* Full Name Field */}
               <div>
                 <label
@@ -112,7 +305,11 @@ const Register = () => {
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg
-                      className="h-5 w-5 text-slate-400"
+                      className={`h-5 w-5 ${
+                        validationErrors.name && touched.name
+                          ? "text-red-400"
+                          : "text-slate-400"
+                      }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -130,13 +327,40 @@ const Register = () => {
                     name="name"
                     type="text"
                     autoComplete="name"
-                    required
                     value={formData.name}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    onBlur={handleBlur}
+                    className={getInputClassName("name")}
                     placeholder="Enter your full name"
+                    aria-invalid={
+                      validationErrors.name && touched.name ? "true" : "false"
+                    }
+                    aria-describedby={
+                      validationErrors.name && touched.name
+                        ? "name-error"
+                        : undefined
+                    }
                   />
                 </div>
+                {validationErrors.name && touched.name && (
+                  <p
+                    id="name-error"
+                    className="mt-2 text-sm text-red-600 flex items-center"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-1 flex-shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {validationErrors.name}
+                  </p>
+                )}
               </div>
 
               {/* Email Field */}
@@ -150,7 +374,11 @@ const Register = () => {
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg
-                      className="h-5 w-5 text-slate-400"
+                      className={`h-5 w-5 ${
+                        validationErrors.email && touched.email
+                          ? "text-red-400"
+                          : "text-slate-400"
+                      }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -168,13 +396,40 @@ const Register = () => {
                     name="email"
                     type="email"
                     autoComplete="email"
-                    required
                     value={formData.email}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    onBlur={handleBlur}
+                    className={getInputClassName("email")}
                     placeholder="Enter your email"
+                    aria-invalid={
+                      validationErrors.email && touched.email ? "true" : "false"
+                    }
+                    aria-describedby={
+                      validationErrors.email && touched.email
+                        ? "email-error"
+                        : undefined
+                    }
                   />
                 </div>
+                {validationErrors.email && touched.email && (
+                  <p
+                    id="email-error"
+                    className="mt-2 text-sm text-red-600 flex items-center"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-1 flex-shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {validationErrors.email}
+                  </p>
+                )}
               </div>
 
               {/* Password Field */}
@@ -188,7 +443,11 @@ const Register = () => {
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg
-                      className="h-5 w-5 text-slate-400"
+                      className={`h-5 w-5 ${
+                        validationErrors.password && touched.password
+                          ? "text-red-400"
+                          : "text-slate-400"
+                      }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -206,16 +465,29 @@ const Register = () => {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
-                    required
                     value={formData.password}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-10 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    onBlur={handleBlur}
+                    className={getPasswordInputClassName("password")}
                     placeholder="Create a strong password"
+                    aria-invalid={
+                      validationErrors.password && touched.password
+                        ? "true"
+                        : "false"
+                    }
+                    aria-describedby={
+                      validationErrors.password && touched.password
+                        ? "password-error"
+                        : "password-strength"
+                    }
                   />
                   <button
                     type="button"
                     onClick={togglePasswordVisibility}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     {showPassword ? (
                       <svg
@@ -254,6 +526,192 @@ const Register = () => {
                     )}
                   </button>
                 </div>
+
+                {/* Password Strength Indicator */}
+                {formData.password && (
+                  <div id="password-strength" className="mt-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-1 bg-gray-200 h-2 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-300 ${passwordStrength.color}`}
+                          style={{
+                            width: `${
+                              getPasswordStrength(formData.password)
+                                .strength === "none"
+                                ? 0
+                                : getPasswordStrength(formData.password)
+                                    .strength === "weak"
+                                ? 20
+                                : getPasswordStrength(formData.password)
+                                    .strength === "fair"
+                                ? 40
+                                : getPasswordStrength(formData.password)
+                                    .strength === "good"
+                                ? 70
+                                : 100
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+                      {passwordStrength.text && (
+                        <span
+                          className={`text-xs font-medium ${
+                            passwordStrength.strength === "weak"
+                              ? "text-red-600"
+                              : passwordStrength.strength === "fair"
+                              ? "text-yellow-600"
+                              : passwordStrength.strength === "good"
+                              ? "text-blue-600"
+                              : "text-green-600"
+                          }`}
+                        >
+                          {passwordStrength.text}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {validationErrors.password && touched.password && (
+                  <p
+                    id="password-error"
+                    className="mt-2 text-sm text-red-600 flex items-center"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-1 flex-shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {validationErrors.password}
+                  </p>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div>
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-slate-700 mb-2"
+                >
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg
+                      className={`h-5 w-5 ${
+                        validationErrors.confirmPassword &&
+                        touched.confirmPassword
+                          ? "text-red-400"
+                          : "text-slate-400"
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={getPasswordInputClassName("confirmPassword")}
+                    placeholder="Confirm your password"
+                    aria-invalid={
+                      validationErrors.confirmPassword &&
+                      touched.confirmPassword
+                        ? "true"
+                        : "false"
+                    }
+                    aria-describedby={
+                      validationErrors.confirmPassword &&
+                      touched.confirmPassword
+                        ? "confirm-password-error"
+                        : undefined
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleConfirmPasswordVisibility}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label={
+                      showConfirmPassword
+                        ? "Hide confirm password"
+                        : "Show confirm password"
+                    }
+                  >
+                    {showConfirmPassword ? (
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {validationErrors.confirmPassword &&
+                  touched.confirmPassword && (
+                    <p
+                      id="confirm-password-error"
+                      className="mt-2 text-sm text-red-600 flex items-center"
+                    >
+                      <svg
+                        className="w-4 h-4 mr-1 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      {validationErrors.confirmPassword}
+                    </p>
+                  )}
               </div>
 
               {/* Role Selection */}
@@ -264,76 +722,85 @@ const Register = () => {
                 >
                   I want to join as
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg
-                      className="h-5 w-5 text-slate-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                      />
-                    </svg>
-                  </div>
-                  <select
-                    id="role"
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    className="block w-full pl-10 pr-10 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white"
-                  >
-                    <option value="student">Student - Learn new skills</option>
-                    <option value="instructor">
-                      Instructor - Teach and inspire
-                    </option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <svg
-                      className="h-5 w-5 text-slate-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                </div>
+                <select
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-10 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white"
+                >
+                  <option value="student">Student - Learn new skills</option>
+                  <option value="instructor">
+                    Instructor - Teach and inspire
+                  </option>
+                </select>
+              
               </div>
 
               {/* Terms and Conditions */}
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  required
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded mt-1"
-                />
-                <label htmlFor="terms" className="ml-2 text-sm text-slate-600">
-                  I agree to the{" "}
-                  <Link
-                    to="/terms"
-                    className="text-blue-600 hover:text-blue-700 font-medium"
+              <div>
+                <div className="flex items-start">
+                  <input
+                    type="checkbox"
+                    id="termsAccepted"
+                    checked={termsAccepted}
+                    onChange={handleTermsChange}
+                    onBlur={handleBlur}
+                    className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded mt-1 transition-colors ${
+                      validationErrors.termsAccepted && touched.termsAccepted
+                        ? "border-red-300 focus:ring-red-500"
+                        : ""
+                    }`}
+                    aria-invalid={
+                      validationErrors.termsAccepted && touched.termsAccepted
+                        ? "true"
+                        : "false"
+                    }
+                    aria-describedby={
+                      validationErrors.termsAccepted && touched.termsAccepted
+                        ? "terms-error"
+                        : undefined
+                    }
+                  />
+                  <label
+                    htmlFor="termsAccepted"
+                    className="ml-2 text-sm text-slate-600"
                   >
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link
-                    to="/privacy"
-                    className="text-blue-600 hover:text-blue-700 font-medium"
+                    I agree to the{" "}
+                    <Link
+                      to="/terms"
+                      className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                    >
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      to="/privacy"
+                      className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                    >
+                      Privacy Policy
+                    </Link>
+                  </label>
+                </div>
+                {validationErrors.termsAccepted && touched.termsAccepted && (
+                  <p
+                    id="terms-error"
+                    className="mt-2 text-sm text-red-600 flex items-center"
                   >
-                    Privacy Policy
-                  </Link>
-                </label>
+                    <svg
+                      className="w-4 h-4 mr-1 flex-shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {validationErrors.termsAccepted}
+                  </p>
+                )}
               </div>
 
               {/* Submit Button */}
