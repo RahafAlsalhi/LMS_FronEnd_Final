@@ -1,6 +1,11 @@
 import React from "react";
+import { useEffect } from "react";
 
 const PrivacyPolicy = () => {
+   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen mt-18 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       {/* Main Content */}

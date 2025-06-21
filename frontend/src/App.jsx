@@ -20,7 +20,10 @@ import CourseDetail from "./pages/CourseDetail";
 import CoursePlayer from "./components/course/CoursePlayer";
 import CategoryManagement from "./pages/admin/CategoryManagement";
 import CreateCourse from "./pages/instructor/CreateCourse";
+import EditCourse from "./pages/instructor/EditCourse";
+
 import CourseManagement from "./pages/instructor/CourseManagement";
+import StudentManagement from "./pages/StudentManagement";
 import ForgotPassword from "./pages/ForgotPassword";
 import AboutUs from "./pages/AboutUs";
 import Contact from "./pages/Contact";
@@ -94,6 +97,14 @@ function App() {
               <Header />
               <main style={{ minHeight: "90vh" }}>
                 <Routes>
+                  <Route
+                    path="/courses/:id/students"
+                    element={
+                      <ProtectedRoute requiredRole="instructor">
+                        <StudentManagement />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
@@ -115,6 +126,7 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route path="/courses/:id/edit" element={<EditCourse />} />
                   <Route
                     path="/admin/categories"
                     element={
