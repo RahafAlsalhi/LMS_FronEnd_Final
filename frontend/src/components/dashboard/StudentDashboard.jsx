@@ -289,25 +289,6 @@ const StudentDashboard = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-slate-800">My Courses</h2>
-              <button
-                onClick={() => navigate("/my-courses")}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center"
-              >
-                View All
-                <svg
-                  className="w-4 h-4 ml-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

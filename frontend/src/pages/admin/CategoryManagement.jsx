@@ -280,9 +280,9 @@ const CategoryManagement = () => {
                       <th className="text-left py-4 px-6 font-semibold text-slate-700">
                         Description
                       </th>
-                      <th className="text-center py-4 px-6 font-semibold text-slate-700">
+                      {/* <th className="text-center py-4 px-6 font-semibold text-slate-700">
                         Courses
-                      </th>
+                      </th> */}
                       <th className="text-center py-4 px-6 font-semibold text-slate-700">
                         Actions
                       </th>
@@ -317,7 +317,7 @@ const CategoryManagement = () => {
                             )}
                           </p>
                         </td>
-                        <td className="py-4 px-6 text-center">
+                        {/* <td className="py-4 px-6 text-center">
                           <span
                             className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
                               category.course_count > 0
@@ -327,7 +327,7 @@ const CategoryManagement = () => {
                           >
                             {category.course_count || 0}
                           </span>
-                        </td>
+                        </td> */}
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-center gap-2">
                             <button

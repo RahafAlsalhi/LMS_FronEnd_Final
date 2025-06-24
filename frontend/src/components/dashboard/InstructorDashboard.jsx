@@ -58,7 +58,7 @@ const InstructorDashboard = () => {
         pendingGrading: 0, // This would need assignment data
       });
 
-      console.log("✅ Courses refreshed successfully!");
+      console.log(" Courses refreshed successfully!");
     } catch (error) {
       console.error("Error fetching instructor data:", error);
       setError("Failed to load dashboard data: " + error.message);
@@ -95,25 +95,25 @@ const InstructorDashboard = () => {
 
     try {
       setDeletingCourseId(courseId);
-      console.log("🗑️ Attempting to delete course:", courseId);
+      console.log(" Attempting to delete course:", courseId);
 
       // FIXED: Use the correct full URL path
       const response = await httpClient.delete(
         `http://localhost:5000/api/courses/${courseId}`
       );
 
-      console.log("✅ Course deletion response:", response);
+      console.log("Course deletion response:", response);
 
       // Show success message
-      alert(`✅ Course "${courseTitle}" has been deleted successfully.`);
+      alert(` Course "${courseTitle}" has been deleted successfully.`);
 
       // IMPORTANT: Refresh the courses list to reflect the deletion
-      console.log("🔄 Refreshing courses list...");
+      console.log(" Refreshing courses list...");
       await fetchInstructorData();
 
-      console.log("✅ Dashboard refreshed after deletion");
+      console.log(" Dashboard refreshed after deletion");
     } catch (error) {
-      console.error("❌ Error deleting course:", error);
+      console.error(" Error deleting course:", error);
       console.error("Error details:", {
         status: error.response?.status,
         statusText: error.response?.statusText,
@@ -125,7 +125,7 @@ const InstructorDashboard = () => {
         error.response?.data?.message ||
         error.message ||
         "Failed to delete course";
-      alert(`❌ Error: ${errorMessage}`);
+      alert(` Error: ${errorMessage}`);
     } finally {
       setDeletingCourseId(null);
     }
