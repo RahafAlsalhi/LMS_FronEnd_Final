@@ -22,8 +22,6 @@ const ModernFooter = () => {
         { name: "Browse Courses", href: "/courses" },
         { name: "Find Instructors", href: "/instructors" },
         { name: "Student Dashboard", href: "/dashboard" },
-        { name: "Certificates", href: "/certificates" },
-        { name: "Mobile App", href: "/mobile" },
       ],
     },
     {
@@ -43,7 +41,6 @@ const ModernFooter = () => {
         { name: "Contact Us", href: "/contact" },
         { name: "Community Forum", href: "/forum" },
         { name: "System Status", href: "/status" },
-        { name: "Bug Reports", href: "/bugs" },
       ],
     },
     {
@@ -53,7 +50,6 @@ const ModernFooter = () => {
         { name: "Careers", href: "/careers" },
         { name: "Press Kit", href: "/press" },
         { name: "Partners", href: "/partners" },
-        { name: "Affiliate Program", href: "/affiliate" },
       ],
     },
   ];
@@ -105,11 +101,11 @@ const ModernFooter = () => {
                 </div>
                 <div className="flex items-center space-x-3 text-gray-400">
                   <Phone className="w-4 h-4 text-cyan-400" />
-                  <span>+1 (555) 123-4567</span>
+                  <span>+962 625 123-4567</span>
                 </div>
                 <div className="flex items-center space-x-3 text-gray-400">
                   <MapPin className="w-4 h-4 text-cyan-400" />
-                  <span>San Francisco, CA</span>
+                  <span>Amman , Jordan</span>
                 </div>
               </div>
 

@@ -22,17 +22,17 @@ const AboutUs = () => {
 
   const stats = [
     {
-      number: "50K+",
+      number: "500+",
       label: "Students Worldwide",
       icon: <Users className="w-6 h-6" />,
     },
     {
-      number: "500+",
+      number: "30+",
       label: "Expert Courses",
       icon: <BookOpen className="w-6 h-6" />,
     },
     {
-      number: "1000+",
+      number: "100+",
       label: "Assignments & Quizzes",
       icon: <Award className="w-6 h-6" />,
     },

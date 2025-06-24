@@ -150,12 +150,12 @@ const ModernHeader = () => {
                     >
                       Manage Categories
                     </Link>
-                    <Link
+                    {/* <Link
                       to="/admin/dashboard"
                       className="text-gray-300 hover:text-white font-medium"
                     >
                       Admin Dashboard
-                    </Link>
+                    </Link> */}
                   </>
                 )}
 

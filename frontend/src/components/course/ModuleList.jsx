@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-// frontend/src/components/course/ModuleList.jsx
+
 import React, { useState, useEffect } from "react";
 import {
   Card,

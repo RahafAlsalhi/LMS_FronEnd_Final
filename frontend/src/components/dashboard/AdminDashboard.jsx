@@ -347,7 +347,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Active Enrollments */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100 hover:shadow-xl transition-shadow">
+          {/* <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-purple-100 rounded-xl">
                 <svg
@@ -374,7 +374,7 @@ const AdminDashboard = () => {
             <p className="text-sm text-slate-500">
               Students currently learning
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Pending Instructor Approvals */}

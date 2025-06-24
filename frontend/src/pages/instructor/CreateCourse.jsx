@@ -229,25 +229,25 @@ const CreateCourse = () => {
       // Add video file if provided
       if (videoFile) {
         formData.append("video", videoFile);
-        console.log("📹 Adding video file:", videoFile.name);
+        console.log(" Adding video file:", videoFile.name);
       }
 
-      console.log("📤 Sending FormData to server...");
+      console.log(" Sending FormData to server...");
 
       const response = await fetch("http://localhost:5000/api/lessons", {
         method: "POST",
         headers: {
-          // ❌ DO NOT SET Content-Type - let browser set it for FormData
+          //  DO NOT SET Content-Type - let browser set it for FormData
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: formData, // ✅ Send FormData instead of JSON
+        body: formData, //  Send FormData instead of JSON
       });
 
       console.log("Response status:", response.status);
 
       if (response.ok) {
         const newLesson = await response.json();
-        console.log("✅ New lesson created:", newLesson);
+        console.log("New lesson created:", newLesson);
         newLesson.assignments = [];
         newLesson.quizzes = [];
 
@@ -265,11 +265,11 @@ const CreateCourse = () => {
         setError(""); // Clear any previous errors
       } else {
         const errorData = await response.json();
-        console.error("❌ Error response:", errorData);
+        console.error(" Error response:", errorData);
         setError(`Failed to add lesson: ${errorData.message}`);
       }
     } catch (error) {
-      console.error("❌ Network error:", error);
+      console.error(" Network error:", error);
       setError("Failed to add lesson: " + error.message);
     }
   };

@@ -71,7 +71,7 @@ const ModernLandingPage = () => {
   ];
 
   const stats = [
-    { number: "50K+", label: "Active Students" },
+    { number: "10K+", label: "Active Students" },
     { number: "500+", label: "Expert Courses" },
     { number: "95%", label: "Success Rate" },
     { number: "24/7", label: "Support" },
@@ -79,7 +79,7 @@ const ModernLandingPage = () => {
 
   const testimonials = [
     {
-      name: "Sarah Chen",
+      name: "Sarah Ahmed",
       role: "Software Developer",
       content:
         "This platform transformed my career. The courses are practical and the community is amazing!",
@@ -88,7 +88,7 @@ const ModernLandingPage = () => {
         "https://images.unsplash.com/photo-1494790108755-2616c78746a1?w=64&h=64&fit=crop&crop=face",
     },
     {
-      name: "Michael Rodriguez",
+      name: "Loay Adas",
       role: "Data Scientist",
       content:
         "Outstanding instructors and comprehensive content. Highly recommend for anyone looking to upskill.",
@@ -97,7 +97,7 @@ const ModernLandingPage = () => {
         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=face",
     },
     {
-      name: "Emily Johnson",
+      name: "Jwaheir abu jbara",
       role: "UX Designer",
       content:
         "The interactive approach and real projects made learning engaging and effective.",
